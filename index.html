@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpolator de Áudios</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .logo .version {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-section h3 {
+            color: #4ecdc4;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .select-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .select-label {
+            display: block;
+            color: #4ecdc4;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .styled-select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+
+        .styled-select option {
+            background: #1a1a2e;
+            color: white;
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .slider-title {
+            font-size: 1rem;
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
+        .slider-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            border: 3px solid #764ba2;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+       .grain-control-container {
+            margin-bottom: 20px;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .grain-control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .grain-control-label {
+            color: #4ecdc4;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .grain-control-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .grain-control-input:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Garantir que o container do grão esteja escondido inicialmente */
+        #grainDurationContainer {
+            display: none;
+        }
+
+        #grainDurationContainer:not(.hidden) {
+            display: block;
+        }
+        .hidden {
+            display: none;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-bar {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 15px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Audio Grid */
+        .audio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            flex: 1;
+        }
+
+        .audio-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .audio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .audio-title {
+            color: #4ecdc4;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .audio-info {
+            background: rgba(78, 205, 196, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+
+        .file-name {
+            font-size: 0.8rem;
+            color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .waveform-container {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            min-height: 120px;
+        }
+
+        .waveform-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .play-btn {
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);
+            color: #333;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
+        }
+
+        .load-btn {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .load-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .record-btn {
+            background: linear-gradient(45deg, #ff6b6b 0%, #ff8e8e 100%);
+            color: white;
+        }
+
+        .record-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(45deg, #ff0000 0%, #ff6b6b 100%);
+            animation: pulse 1.5s infinite;
+        }
+
+        .normalize-btn {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .normalize-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 15px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4ecdc4;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            .audio-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .control-bar {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .btn {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>Interpolador de áudio</h1>
+                <div class="version">v1.0</div>
+            </div>
+
+            <div class="nav-section">
+                <h3>Configurações</h3>
+                <div class="select-wrapper">
+                    <label class="select-label">Tipo de Interpolação</label>
+                    <select class="styled-select" id="interpolationType">
+                        <option value="random">Interpolação de ondas sonoras - distribuição aleatória</option>
+                        <option value="equal">Interpolação de ondas sonoras - distribuição regular</option>
+                        <option value="grain">Interpolação de ondas sonoras - mistura de grãos</option>
+                    </select>
+                </div>
+                <div class="grain-control-container hidden" id="grainDurationContainer">
+                    <div class="grain-control-header">
+                        <div class="grain-control-label">Duração do Grão</div>
+                    </div>
+                    <input type="number" min="10" value="100" class="grain-control-input" id="grainDurationInput" placeholder="ms">
+                </div>
+                <!-- Controle de Crossfade -->
+                <div class="slider-container" id="crossfadeContainer">
+                    <div class="slider-header">
+                        <div class="slider-title">Crossfade entre Grãos</div>
+                        <div class="slider-value"><span id="crossfadeValue">0</span>%</div>
+                    </div>
+                    <input type="range" min="0" max="100" value="0" class="slider" id="crossfadeSlider">
+                </div>
+
+                <!-- Controle de Aleatoriedade da Duração dos Grãos -->
+                <div class="slider-container" id="durationRandomnessContainer">
+                    <div class="slider-header">
+                        <div class="slider-title">Aleatoriedade da Duração</div>
+                        <div class="slider-value"><span id="durationRandomnessValue">0</span>%</div>
+                    </div>
+                    <input type="range" min="0" max="100" value="0" class="slider" id="durationRandomnessSlider">
+                </div>
+                <div class="slider-container" id="randomnessSliderContainer">
+                    <div class="slider-header">
+                        <div class="slider-title">Fator de Aleatoriedade</div>
+                        <div class="slider-value"><span id="randomnessValue">50</span>%</div>
+                    </div>
+                    <input type="range" min="0" max="100" value="50" class="slider" id="randomnessSlider">
+                </div>
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <div class="slider-title">Fator de Interpolação</div>
+                        <div class="slider-value"><span id="progressValue">50</span>%</div>
+                    </div>
+                    <input type="range" min="0" max="100" value="50" class="slider" id="progressSlider">
+                </div>
+                <button class="btn btn-primary" id="transformBtn" disabled>
+                    ⚡ Aplicar Transformação
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Control Bar -->
+            <div class="control-bar">
+                <label class="select-label" id="Interpolação-label">Interpolação de ondas sonoras - distribuição aleatória</label>
+            </div>
+
+            <!-- Audio Grid -->
+            <div class="audio-grid">
+                <div class="audio-card">
+                    <div class="audio-header">
+                        <div class="audio-title">🎵 Áudio 1</div>
+                        <div class="audio-info" id="duration1">--:--</div>
+                        <div class="file-name" id="audio1-name">Nenhum arquivo selecionado</div>
+                    </div>
+                    <div class="waveform-container">
+                        <canvas id="waveform1" class="waveform-canvas"></canvas>
+                    </div>
+                    <div class="audio-controls">
+                        <label class="control-btn load-btn" for="audio1">📁</label>
+                        <input type="file" id="audio1" class="file-input" accept="audio/*" style="display: none;">
+                        <button class="control-btn play-btn" id="play1" disabled>▶️</button>
+                    </div>
+                </div>
+
+                <div class="audio-card">
+                    <div class="audio-header">
+                        <div class="audio-title">🎵 Áudio 2</div>
+                        <div class="audio-info" id="duration2">--:--</div>
+                        <div class="file-name" id="audio2-name">Nenhum arquivo selecionado</div>
+                    </div>
+                    <div class="waveform-container">
+                        <canvas id="waveform2" class="waveform-canvas"></canvas>
+                    </div>
+                    <div class="audio-controls">
+                        <label class="control-btn load-btn" for="audio2">📁</label>
+                        <input type="file" id="audio2" class="file-input" accept="audio/*" style="display: none;">
+                        <button class="control-btn play-btn" id="play2" disabled>▶️</button>
+                    </div>
+                </div>
+
+                <div class="audio-card">
+                    <div class="audio-header">
+                        <div class="audio-title">⚡ Resultado</div>
+                        <div class="audio-info" id="durationResult">--:--</div>
+                    </div>
+                    <div class="waveform-container">
+                        <canvas id="waveformResult" class="waveform-canvas"></canvas>
+                    </div>
+                    <div class="audio-controls">
+                        <button class="control-btn play-btn" id="playResult" disabled>▶️</button>
+                        <button class="control-btn record-btn" id="recordResult" disabled>⏺️</button>
+                        <button class="control-btn normalize-btn" id="normalizeResult" disabled>📊</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status" id="status">
+                    Carregue dois arquivos de áudio para começar
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
