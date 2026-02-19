@@ -11,6 +11,13 @@ let grainSize = 50; // ms
 let crossfadePercentage = 0; // 0% a 100%
 let durationRandomness = 0; // 0% a 100%
 
+// Estado de reprodução por painel
+const players = {
+    1: { source: null, isPaused: false, pauseOffset: 0, startTime: 0 },
+    2: { source: null, isPaused: false, pauseOffset: 0, startTime: 0 },
+    'result': { source: null, isPaused: false, pauseOffset: 0, startTime: 0 }
+};
+
 // Dados FFT de alta definição
 let fftData1 = { frequencies: null, magnitudes: null, phases: null };
 let fftData2 = { frequencies: null, magnitudes: null, phases: null };
@@ -25,9 +32,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('audio1').addEventListener('change', (e) => loadAudio(e, 1));
     document.getElementById('audio2').addEventListener('change', (e) => loadAudio(e, 2));
     document.getElementById('transformBtn').addEventListener('click', () => applyTransformation());
-    document.getElementById('play1').addEventListener('click', () => playAudio(audioData1));
-    document.getElementById('play2').addEventListener('click', () => playAudio(audioData2));
-    document.getElementById('playResult').addEventListener('click', () => playAudio(resultAudio));
+    document.getElementById('play1').addEventListener('click', () => playAudioPanel(1, audioData1));
+    document.getElementById('play2').addEventListener('click', () => playAudioPanel(2, audioData2));
+    document.getElementById('playResult').addEventListener('click', () => playAudioPanel('result', resultAudio));
+    document.getElementById('pause1').addEventListener('click', () => pauseAudioPanel(1));
+    document.getElementById('pause2').addEventListener('click', () => pauseAudioPanel(2));
+    document.getElementById('pauseResult').addEventListener('click', () => pauseAudioPanel('result'));
+    document.getElementById('stop1').addEventListener('click', () => stopAudioPanel(1));
+    document.getElementById('stop2').addEventListener('click', () => stopAudioPanel(2));
+    document.getElementById('stopResult').addEventListener('click', () => stopAudioPanel('result'));
     document.getElementById('recordResult').addEventListener('click', () => toggleRecording());
     document.getElementById('normalizeResult').addEventListener('click', () => normalizeAudio());
     document.getElementById('grainDurationContainer').classList.add('hidden');
@@ -147,6 +160,8 @@ function applyTransformation() {
     drawWaveform(resultAudio, 'waveformResult');
 
     document.getElementById('playResult').disabled = false;
+    document.getElementById('pauseResult').disabled = true;
+    document.getElementById('stopResult').disabled = true;
     document.getElementById('normalizeResult').disabled = false;
     updateRecordButton();
     updateStatus('Transformação concluída com sucesso!');
@@ -832,12 +847,16 @@ async function loadAudio(event, audioNumber) {
             audioData1 = audioData;
             document.getElementById('audio1-name').textContent = file.name;
             document.getElementById('play1').disabled = false;
+            document.getElementById('pause1').disabled = true;
+            document.getElementById('stop1').disabled = true;
             document.getElementById('duration1').textContent = durationText;
             drawWaveform(audioData, 'waveform1');
         } else {
             audioData2 = audioData;
             document.getElementById('audio2-name').textContent = file.name;
             document.getElementById('play2').disabled = false;
+            document.getElementById('pause2').disabled = true;
+            document.getElementById('stop2').disabled = true;
             document.getElementById('duration2').textContent = durationText;
             drawWaveform(audioData, 'waveform2');
         }
@@ -920,33 +939,163 @@ function resetDurations() {
     document.getElementById('durationResult').textContent = 'Duração: --:--';
 }
 
+function getPanelIds(panel) {
+    if (panel === 'result') return { play: 'playResult', pause: 'pauseResult', stop: 'stopResult' };
+    return { play: `play${panel}`, pause: `pause${panel}`, stop: `stop${panel}` };
+}
+
+function updatePanelButtons(panel, state) {
+    // state: 'playing' | 'paused' | 'stopped'
+    const ids = getPanelIds(panel);
+    const playBtn = document.getElementById(ids.play);
+    const pauseBtn = document.getElementById(ids.pause);
+    const stopBtn = document.getElementById(ids.stop);
+
+    if (state === 'playing') {
+        playBtn.textContent = '▶️';
+        pauseBtn.disabled = false;
+        stopBtn.disabled = false;
+    } else if (state === 'paused') {
+        playBtn.textContent = '▶️';
+        pauseBtn.textContent = '▶️ Retomar';
+        pauseBtn.disabled = false;
+        stopBtn.disabled = false;
+    } else {
+        // stopped
+        playBtn.textContent = '▶️';
+        pauseBtn.textContent = '⏸️';
+        pauseBtn.disabled = true;
+        stopBtn.disabled = true;
+    }
+}
+
+async function playAudioPanel(panel, audioData) {
+    if (!audioData) return;
+
+    const player = players[panel];
+
+    // Se estiver pausado, retomar
+    if (player.isPaused) {
+        await audioContext.resume();
+        // Retomar do ponto pausado
+        const buffer = audioContext.createBuffer(1, audioData.length, sampleRate);
+        buffer.copyToChannel(audioData, 0);
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContext.destination);
+        const offset = player.pauseOffset;
+        source.start(0, offset);
+        player.source = source;
+        player.startTime = audioContext.currentTime - offset;
+        player.isPaused = false;
+
+        source.onended = () => {
+            if (!player.isPaused) {
+                player.source = null;
+                player.pauseOffset = 0;
+                updatePanelButtons(panel, 'stopped');
+                updateStatus('Reprodução concluída.');
+            }
+        };
+
+        updatePanelButtons(panel, 'playing');
+        updateStatus('Reproduzindo áudio...', true);
+        return;
+    }
+
+    // Parar qualquer reprodução anterior no painel
+    if (player.source) {
+        player.source.onended = null;
+        player.source.stop();
+        player.source = null;
+    }
+
+    updateStatus('Tocando áudio', true);
+    try {
+        if (audioContext.state === 'suspended') await audioContext.resume();
+
+        const audioBuffer = audioContext.createBuffer(1, audioData.length, sampleRate);
+        audioBuffer.copyToChannel(audioData, 0);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start();
+
+        player.source = source;
+        player.isPaused = false;
+        player.pauseOffset = 0;
+        player.startTime = audioContext.currentTime;
+
+        source.onended = () => {
+            if (!player.isPaused) {
+                player.source = null;
+                player.pauseOffset = 0;
+                updatePanelButtons(panel, 'stopped');
+                updateStatus('Reprodução concluída.');
+            }
+        };
+
+        updatePanelButtons(panel, 'playing');
+        // Também atualizar o currentSource global para compatibilidade
+        currentSource = source;
+
+    } catch (error) {
+        console.error('Erro ao tocar áudio:', error);
+    }
+}
+
+function pauseAudioPanel(panel) {
+    const player = players[panel];
+    if (!player.source) return;
+
+    if (!player.isPaused) {
+        // Pausar
+        player.pauseOffset = audioContext.currentTime - player.startTime;
+        player.isPaused = true;
+        player.source.onended = null;
+        player.source.stop();
+        player.source = null;
+        audioContext.suspend();
+        updatePanelButtons(panel, 'paused');
+        updateStatus('Áudio pausado.');
+    } else {
+        // Retomar (chama playAudioPanel que lida com isPaused=true)
+        const audioDataMap = { 1: audioData1, 2: audioData2, result: resultAudio };
+        audioContext.resume().then(() => playAudioPanel(panel, audioDataMap[panel]));
+    }
+}
+
+function stopAudioPanel(panel) {
+    const player = players[panel];
+    if (player.source) {
+        player.source.onended = null;
+        player.source.stop();
+        player.source = null;
+    }
+    player.isPaused = false;
+    player.pauseOffset = 0;
+    audioContext.resume(); // garante que o contexto não fica suspenso
+    updatePanelButtons(panel, 'stopped');
+    updateStatus('Reprodução parada.');
+}
+
 async function playAudio(audioData) {
+    // Mantida por compatibilidade
     if (!audioData) return;
     updateStatus(`Tocando áudio`, true);
     try {
-        // Parar qualquer áudio tocando
         if (currentSource) {
             currentSource.stop();
             currentSource = null;
         }
-
-        // Criar buffer de áudio
         const audioBuffer = audioContext.createBuffer(1, audioData.length, sampleRate);
         audioBuffer.copyToChannel(audioData, 0);
-
-        // Criar source
         currentSource = audioContext.createBufferSource();
         currentSource.buffer = audioBuffer;
         currentSource.connect(audioContext.destination);
-
-        // Tocar
         currentSource.start();
-
-        // Cleanup quando terminar
-        currentSource.onended = () => {
-            currentSource = null;
-        };
-
+        currentSource.onended = () => { currentSource = null; };
     } catch (error) {
         console.error('Erro ao tocar áudio:', error);
     }

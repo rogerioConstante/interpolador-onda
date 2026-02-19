@@ -367,6 +367,26 @@
             animation: pulse 1.5s infinite;
         }
 
+        .pause-btn {
+            background: linear-gradient(45deg, #f7971e 0%, #ffd200 100%);
+            color: #333;
+        }
+
+        .pause-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(247, 151, 30, 0.4);
+        }
+
+        .stop-btn {
+            background: linear-gradient(45deg, #434343 0%, #000000 100%);
+            color: white;
+        }
+
+        .stop-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(67, 67, 67, 0.5);
+        }
+
         .normalize-btn {
             background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -527,6 +547,8 @@
                         <label class="control-btn load-btn" for="audio1">📁</label>
                         <input type="file" id="audio1" class="file-input" accept="audio/*" style="display: none;">
                         <button class="control-btn play-btn" id="play1" disabled>▶️</button>
+                        <button class="control-btn pause-btn" id="pause1" disabled>⏸️</button>
+                        <button class="control-btn stop-btn" id="stop1" disabled>⏹️</button>
                     </div>
                 </div>
 
@@ -543,6 +565,8 @@
                         <label class="control-btn load-btn" for="audio2">📁</label>
                         <input type="file" id="audio2" class="file-input" accept="audio/*" style="display: none;">
                         <button class="control-btn play-btn" id="play2" disabled>▶️</button>
+                        <button class="control-btn pause-btn" id="pause2" disabled>⏸️</button>
+                        <button class="control-btn stop-btn" id="stop2" disabled>⏹️</button>
                     </div>
                 </div>
 
@@ -556,6 +580,8 @@
                     </div>
                     <div class="audio-controls">
                         <button class="control-btn play-btn" id="playResult" disabled>▶️</button>
+                        <button class="control-btn pause-btn" id="pauseResult" disabled>⏸️</button>
+                        <button class="control-btn stop-btn" id="stopResult" disabled>⏹️</button>
                         <button class="control-btn record-btn" id="recordResult" disabled>⏺️</button>
                         <button class="control-btn normalize-btn" id="normalizeResult" disabled>📊</button>
                     </div>
