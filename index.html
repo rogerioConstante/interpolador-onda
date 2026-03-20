@@ -3,599 +3,972 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interpolator de Áudios</title>
+    <title>Interpolador de Áudios v1.3</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
             background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
             color: #ffffff;
             min-height: 100vh;
-            padding: 0;
             overflow-x: hidden;
         }
 
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
+        .app-container { display: flex; min-height: 100vh; }
 
         /* Sidebar */
         .sidebar {
             width: 280px;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,0.3);
             backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255,255,255,0.1);
             padding: 25px 20px;
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
         }
 
-        .logo {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
+        .logo { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .logo h1 {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
             background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 5px;
         }
+        .logo .version { color: #a0a0a0; font-size: 0.9rem; }
 
-        .logo .version {
-            color: #a0a0a0;
-            font-size: 0.9rem;
-        }
+        .nav-section { margin-bottom: 20px; }
+        .nav-section h3 { color: #4ecdc4; font-size: 1rem; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
 
-        .nav-section {
-            margin-bottom: 30px;
-        }
-
-        .nav-section h3 {
-            color: #4ecdc4;
-            font-size: 1rem;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .select-wrapper {
-            margin-bottom: 20px;
-        }
-
-        .select-label {
-            display: block;
-            color: #4ecdc4;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
+        .select-wrapper { margin-bottom: 16px; }
+        .select-label { display: block; color: #4ecdc4; margin-bottom: 8px; font-size: 0.85rem; font-weight: 600; }
 
         .styled-select {
             width: 100%;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
             color: white;
-            font-size: 14px;
+            font-size: 13px;
             backdrop-filter: blur(10px);
         }
+        .styled-select option { background: #1a1a2e; color: white; }
 
-        .styled-select option {
-            background: #1a1a2e;
-            color: white;
-        }
-
-        .slider-container {
-            margin-bottom: 20px;
-        }
-
-        .slider-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .slider-title {
-            font-size: 1rem;
-            color: #4ecdc4;
-            font-weight: 600;
-        }
-
+        .slider-container { margin-bottom: 16px; }
+        .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .slider-title { font-size: 0.85rem; color: #4ecdc4; font-weight: 600; }
         .slider-value {
-            font-size: 1.3rem;
-            font-weight: bold;
+            font-size: 1.1rem; font-weight: bold;
             background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
         .slider {
             -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
+            width: 100%; height: 8px;
             border-radius: 4px;
             background: linear-gradient(to right, #667eea, #764ba2);
             outline: none;
         }
-
         .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #fff;
-            cursor: pointer;
-            border: 3px solid #764ba2;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            border-radius: 50%; background: #fff;
+            cursor: pointer; border: 3px solid #764ba2;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
 
-       .grain-control-container {
-            margin-bottom: 20px;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .grain-control-container {
+            margin-bottom: 16px; padding: 12px 15px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 8px;
-            backdrop-filter: blur(10px);
         }
-
-        .grain-control-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .grain-control-label {
-            color: #4ecdc4;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
+        .grain-control-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .grain-control-label { color: #4ecdc4; font-size: 0.85rem; font-weight: 600; }
+        .grain-control-unit { color: #a0a0a0; font-size: 0.75rem; }
         .grain-control-input {
-            width: 100%;
-            padding: 8px 12px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
-            color: white;
-            font-size: 14px;
-            text-align: center;
+            width: 100%; padding: 8px 12px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px; color: white;
+            font-size: 14px; text-align: center;
+        }
+        .grain-control-input:focus { outline: none; border-color: #4ecdc4; }
+
+        /* Sobreposição - alinhamento */
+        .align-selector { margin-bottom: 16px; }
+        .align-buttons { display: flex; gap: 6px; margin-top: 8px; }
+        .align-btn {
+            flex: 1; padding: 8px 4px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px; color: #aaa;
+            font-size: 11px; cursor: pointer;
+            transition: all 0.2s; text-align: center;
+        }
+        .align-btn.active {
+            background: rgba(78,205,196,0.3);
+            border-color: #4ecdc4; color: #4ecdc4;
         }
 
-        .grain-control-input:focus {
-            outline: none;
-            border-color: #4ecdc4;
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Garantir que o container do grão esteja escondido inicialmente */
-        #grainDurationContainer {
-            display: none;
-        }
-
-        #grainDurationContainer:not(.hidden) {
-            display: block;
-        }
-        .hidden {
-            display: none;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .control-bar {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 15px;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        .hidden { display: none !important; }
 
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 11px 20px; border: none;
+            border-radius: 8px; cursor: pointer;
+            font-size: 13px; font-weight: 600;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            min-width: 120px;
+            text-transform: uppercase; letter-spacing: 1px;
+            width: 100%; margin-top: 4px;
         }
+        .btn-primary { background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(240,147,251,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
-        .btn-primary {
-            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-            color: white;
+        /* Main Content */
+        .main-content { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+
+        .control-bar {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px; padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
+        .control-bar-label { color: #4ecdc4; font-size: 1rem; font-weight: 600; }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* Audio Grid */
-        .audio-grid {
+        /* Audio Grid: áudios 1 e 2 lado a lado, resultado abaixo full-width */
+        .audio-grid-top {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 25px;
-            flex: 1;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px;
         }
+        .audio-card-result { /* full width */ }
 
         .audio-card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
+            border-radius: 12px; padding: 18px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; flex-direction: column;
         }
 
-        .audio-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .audio-title {
-            color: #4ecdc4;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
+        .audio-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .audio-title { color: #4ecdc4; font-size: 1rem; font-weight: 600; }
         .audio-info {
-            background: rgba(78, 205, 196, 0.1);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            color: #4ecdc4;
-            font-weight: 600;
+            background: rgba(78,205,196,0.1); padding: 4px 10px;
+            border-radius: 6px; font-size: 0.78rem;
+            color: #4ecdc4; font-weight: 600;
+        }
+        .file-name {
+            font-size: 0.78rem; color: #4ecdc4;
+            background: rgba(78,205,196,0.1);
+            padding: 4px 10px; border-radius: 6px;
+            font-weight: 600; max-width: 200px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .file-name {
-            font-size: 0.8rem;
-            color: #4ecdc4;
-            background: rgba(78, 205, 196, 0.1);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 600;
+        /* Gain slider inside card */
+        .gain-row {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 10px;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
         }
+        .gain-label { font-size: 0.78rem; color: #aaa; white-space: nowrap; }
+        .gain-slider {
+            -webkit-appearance: none; flex: 1; height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #4ecdc4, #45b7d1);
+            outline: none;
+        }
+        .gain-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px;
+            border-radius: 50%; background: #fff;
+            cursor: pointer; border: 2px solid #4ecdc4;
+        }
+        .gain-value { font-size: 0.78rem; color: #4ecdc4; font-weight: 600; min-width: 36px; text-align: right; }
 
         .waveform-container {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            min-height: 120px;
+            flex: 1; background: rgba(0,0,0,0.3);
+            border-radius: 8px; overflow: hidden;
+            margin-bottom: 12px; max-height: 160px;
         }
+        .waveform-canvas { width: 100%; height: 100%; display: block; }
 
-        .waveform-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        .audio-controls {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+        .audio-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 
         .control-btn {
-            width: 45px;
-            height: 45px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            font-size: 16px;
+            width: 42px; height: 42px; border: none;
+            border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center;
+            justify-content: center; transition: all 0.3s ease; font-size: 22px;
         }
+        .control-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
 
-        .play-btn {
-            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 100%);
-            color: #333;
-        }
+        .play-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85); }
+        .play-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 5px 15px rgba(255,154,158,0.4); }
+        .load-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85); }
+        .load-btn:hover { transform: scale(1.1); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .record-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85);}
+        .record-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 5px 15px rgba(255,107,107,0.4); }
+        .record-btn.recording { background: linear-gradient(45deg, #ff0000 0%, #ff6b6b 100%); animation: pulse 1.5s infinite; }
+        .pause-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85); }
+        .pause-btn:hover:not(:disabled) { transform: scale(1.1); box-shadow: 0 5px 15px rgba(247,151,30,0.4); }
+        .stop-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85); }
+        .stop-btn:hover:not(:disabled) { transform: scale(1.1); }
+        .normalize-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85); }
+        .normalize-btn:hover:not(:disabled) { transform: scale(1.1); }
 
-        .play-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
-        }
-
-        .load-btn {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .load-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .record-btn {
-            background: linear-gradient(45deg, #ff6b6b 0%, #ff8e8e 100%);
-            color: white;
-        }
-
-        .record-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-        }
-
-        .record-btn.recording {
-            background: linear-gradient(45deg, #ff0000 0%, #ff6b6b 100%);
-            animation: pulse 1.5s infinite;
-        }
-
-        .pause-btn {
-            background: linear-gradient(45deg, #f7971e 0%, #ffd200 100%);
-            color: #333;
-        }
-
-        .pause-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(247, 151, 30, 0.4);
-        }
-
-        .stop-btn {
-            background: linear-gradient(45deg, #434343 0%, #000000 100%);
-            color: white;
-        }
-
-        .stop-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(67, 67, 67, 0.5);
-        }
-
-        .normalize-btn {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .normalize-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        /* Status Bar */
         .status-bar {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 8px;
-            padding: 15px 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.9rem;
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
+            border-radius: 8px; padding: 6px 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.88rem;
         }
 
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
 
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #4ecdc4;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .app-container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            .audio-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .control-bar {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .btn {
-                min-width: auto;
-                width: 100%;
-            }
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .audio-grid-top { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo">
-                <h1>Interpolador de áudio</h1>
-                <div class="version">v1.2</div>
-            </div>
-
-            <div class="nav-section">
-                <h3>Configurações</h3>
-                <div class="select-wrapper">
-                    <label class="select-label">Tipo de Interpolação</label>
-                    <select class="styled-select" id="interpolationType">
-                        <option value="random">Interpolação de ondas sonoras - distribuição aleatória</option>
-                        <option value="equal">Interpolação de ondas sonoras - distribuição regular</option>
-                        <option value="grain">Interpolação de ondas sonoras - mistura de grãos</option>
-                    </select>
-                </div>
-                <div class="grain-control-container hidden" id="grainDurationContainer">
-                    <div class="grain-control-header">
-                        <div class="grain-control-label">Duração do Grão</div>
-                    </div>
-                    <input type="number" min="10" value="100" class="grain-control-input" id="grainDurationInput" placeholder="ms">
-                </div>
-                <!-- Controle de Crossfade -->
-                <div class="slider-container" id="crossfadeContainer">
-                    <div class="slider-header">
-                        <div class="slider-title">Crossfade entre Grãos</div>
-                        <div class="slider-value"><span id="crossfadeValue">0</span>%</div>
-                    </div>
-                    <input type="range" min="0" max="100" value="0" class="slider" id="crossfadeSlider">
-                </div>
-
-                <!-- Controle de Aleatoriedade da Duração dos Grãos -->
-                <div class="slider-container" id="durationRandomnessContainer">
-                    <div class="slider-header">
-                        <div class="slider-title">Aleatoriedade da Duração</div>
-                        <div class="slider-value"><span id="durationRandomnessValue">0</span>%</div>
-                    </div>
-                    <input type="range" min="0" max="100" value="0" class="slider" id="durationRandomnessSlider">
-                </div>
-                <div class="slider-container" id="randomnessSliderContainer">
-                    <div class="slider-header">
-                        <div class="slider-title">Fator de Aleatoriedade</div>
-                        <div class="slider-value"><span id="randomnessValue">50</span>%</div>
-                    </div>
-                    <input type="range" min="0" max="100" value="50" class="slider" id="randomnessSlider">
-                </div>
-                <div class="slider-container">
-                    <div class="slider-header">
-                        <div class="slider-title">Fator de Interpolação</div>
-                        <div class="slider-value"><span id="progressValue">50</span>%</div>
-                    </div>
-                    <input type="range" min="0" max="100" value="50" class="slider" id="progressSlider">
-                </div>
-                <button class="btn btn-primary" id="transformBtn" disabled>
-                    ⚡ Aplicar Transformação
-                </button>
-            </div>
+<div class="app-container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <h1>Interpolador de Áudio</h1>
+            <div class="version">v1.3</div>
         </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Control Bar -->
-            <div class="control-bar">
-                <label class="select-label" id="Interpolação-label">Interpolação de ondas sonoras - distribuição aleatória</label>
+        <div class="nav-section">
+            <h3>Configurações</h3>
+
+            <div class="select-wrapper">
+                <label class="select-label">Tipo de Interpolação</label>
+                <select class="styled-select" id="interpolationType">
+                    <option value="random">Distribuição Aleatória</option>
+                    <option value="grain">Mistura de Grãos</option>
+                    <option value="overlap">Sobreposição</option>
+                </select>
             </div>
 
-            <!-- Audio Grid -->
-            <div class="audio-grid">
-                <div class="audio-card">
-                    <div class="audio-header">
-                        <div class="audio-title">🎵 Áudio 1</div>
-                        <div class="audio-info" id="duration1">--:--</div>
-                        <div class="file-name" id="audio1-name">Nenhum arquivo selecionado</div>
-                    </div>
-                    <div class="waveform-container">
-                        <canvas id="waveform1" class="waveform-canvas"></canvas>
-                    </div>
-                    <div class="audio-controls">
-                        <label class="control-btn load-btn" for="audio1">📁</label>
-                        <input type="file" id="audio1" class="file-input" accept="audio/*" style="display: none;">
-                        <button class="control-btn play-btn" id="play1" disabled>▶️</button>
-                        <button class="control-btn pause-btn" id="pause1" disabled>⏸️</button>
-                        <button class="control-btn stop-btn" id="stop1" disabled>⏹️</button>
-                    </div>
+            <!-- GRAIN CONTROLS -->
+            <div class="grain-control-container hidden" id="grainDurationContainer">
+                <div class="grain-control-header">
+                    <div class="grain-control-label">Duração do Grão</div>
+                    <div class="grain-control-unit">ms</div>
                 </div>
+                <input type="number" min="10" max="2000" value="100" class="grain-control-input" id="grainDurationInput">
+            </div>
 
-                <div class="audio-card">
-                    <div class="audio-header">
-                        <div class="audio-title">🎵 Áudio 2</div>
-                        <div class="audio-info" id="duration2">--:--</div>
-                        <div class="file-name" id="audio2-name">Nenhum arquivo selecionado</div>
-                    </div>
-                    <div class="waveform-container">
-                        <canvas id="waveform2" class="waveform-canvas"></canvas>
-                    </div>
-                    <div class="audio-controls">
-                        <label class="control-btn load-btn" for="audio2">📁</label>
-                        <input type="file" id="audio2" class="file-input" accept="audio/*" style="display: none;">
-                        <button class="control-btn play-btn" id="play2" disabled>▶️</button>
-                        <button class="control-btn pause-btn" id="pause2" disabled>⏸️</button>
-                        <button class="control-btn stop-btn" id="stop2" disabled>⏹️</button>
-                    </div>
+            <div class="slider-container hidden" id="crossfadeContainer">
+                <div class="slider-header">
+                    <div class="slider-title">Crossfade</div>
+                    <div class="slider-value"><span id="crossfadeValue">0</span>%</div>
                 </div>
+                <input type="range" min="0" max="100" value="0" class="slider" id="crossfadeSlider">
+            </div>
 
-                <div class="audio-card">
-                    <div class="audio-header">
-                        <div class="audio-title">⚡ Resultado</div>
-                        <div class="audio-info" id="durationResult">--:--</div>
-                    </div>
-                    <div class="waveform-container">
-                        <canvas id="waveformResult" class="waveform-canvas"></canvas>
-                    </div>
-                    <div class="audio-controls">
-                        <button class="control-btn play-btn" id="playResult" disabled>▶️</button>
-                        <button class="control-btn pause-btn" id="pauseResult" disabled>⏸️</button>
-                        <button class="control-btn stop-btn" id="stopResult" disabled>⏹️</button>
-                        <button class="control-btn record-btn" id="recordResult" disabled>⏺️</button>
-                        <button class="control-btn normalize-btn" id="normalizeResult" disabled>📊</button>
-                    </div>
+            <div class="slider-container hidden" id="durationRandomnessContainer">
+                <div class="slider-header">
+                    <div class="slider-title">Aleator. da Duração</div>
+                    <div class="slider-value"><span id="durationRandomnessValue">0</span>%</div>
+                </div>
+                <input type="range" min="0" max="100" value="0" class="slider" id="durationRandomnessSlider">
+            </div>
+
+            <!-- RANDOM CONTROLS -->
+            <div class="slider-container hidden" id="randomnessSliderContainer">
+                <div class="slider-header">
+                    <div class="slider-title">Fator de Aleatoriedade</div>
+                    <div class="slider-value"><span id="randomnessValue">50</span>%</div>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="slider" id="randomnessSlider">
+            </div>
+
+            <!-- OVERLAP CONTROLS -->
+            <div class="align-selector hidden" id="alignContainer">
+                <div class="select-label">Alinhamento do Áudio Mais Curto</div>
+                <div class="align-buttons">
+                    <button class="align-btn active" data-align="start">Início</button>
+                    <button class="align-btn" data-align="center">Centro</button>
+                    <button class="align-btn" data-align="end">Fim</button>
                 </div>
             </div>
 
-            <!-- Status Bar -->
-            <div class="status-bar">
-                <div class="status" id="status">
-                    Carregue dois arquivos de áudio para começar
+            <!-- ALWAYS VISIBLE -->
+            <div class="slider-container">
+                <div class="slider-header">
+                    <div class="slider-title">Fator de Interpolação</div>
+                    <div class="slider-value"><span id="progressValue">50</span>%</div>
                 </div>
+                <input type="range" min="0" max="100" value="50" class="slider" id="progressSlider">
             </div>
+
+            <button class="btn btn-primary" id="transformBtn" disabled>⚡ Aplicar Transformação</button>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="control-bar">
+            <div class="control-bar-label" id="Interpolação-label">Distribuição Aleatória</div>
+        </div>
+
+        <!-- Top row: Audio 1 and Audio 2 -->
+        <div class="audio-grid-top">
+            <!-- Audio 1 -->
+            <div class="audio-card">
+                <div class="audio-header">
+                    <div class="audio-title">🎵 Áudio 1</div>
+                    <div class="audio-info" id="duration1">--:--</div>
+                    <div class="file-name" id="audio1-name">Nenhum arquivo</div>
+                </div>
+                <!-- Gain -->
+                <div class="gain-row">
+                    <span class="gain-label">Ganho</span>
+                    <input type="range" min="-24" max="12" value="0" step="0.5" class="gain-slider" id="gain1Slider">
+                    <span class="gain-value" id="gain1Value">0 dB</span>
+                </div>
+                <div class="waveform-container">
+                    <canvas id="waveform1" class="waveform-canvas"></canvas>
+                </div>
+                <div class="audio-controls">
+                    <label class="control-btn load-btn" for="audio1" title="Carregar">📁</label>
+                    <input type="file" id="audio1" class="file-input" accept="audio/*" style="display:none">
+                    <button class="control-btn play-btn" id="play1" disabled title="Play">▶️</button>
+                    <button class="control-btn pause-btn" id="pause1" disabled title="Pausar">⏸️</button>
+                    <button class="control-btn stop-btn" id="stop1" disabled title="Parar">⏹️</button>
+                </div>
+            </div>
+
+            <!-- Audio 2 -->
+            <div class="audio-card">
+                <div class="audio-header">
+                    <div class="audio-title">🎵 Áudio 2</div>
+                    <div class="audio-info" id="duration2">--:--</div>
+                    <div class="file-name" id="audio2-name">Nenhum arquivo</div>
+                </div>
+                <!-- Gain -->
+                <div class="gain-row">
+                    <span class="gain-label">Ganho</span>
+                    <input type="range" min="-24" max="12" value="0" step="0.5" class="gain-slider" id="gain2Slider">
+                    <span class="gain-value" id="gain2Value">0 dB</span>
+                </div>
+                <div class="waveform-container">
+                    <canvas id="waveform2" class="waveform-canvas"></canvas>
+                </div>
+                <div class="audio-controls">
+                    <label class="control-btn load-btn" for="audio2" title="Carregar">📁</label>
+                    <input type="file" id="audio2" class="file-input" accept="audio/*" style="display:none">
+                    <button class="control-btn play-btn" id="play2" disabled title="Play">▶️</button>
+                    <button class="control-btn pause-btn" id="pause2" disabled title="Pausar">⏸️</button>
+                    <button class="control-btn stop-btn" id="stop2" disabled title="Parar">⏹️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result: full width -->
+        <div class="audio-card audio-card-result">
+            <div class="audio-header">
+                <div class="audio-title">⚡ Interpolação</div>
+                <div class="audio-info" id="durationResult">--:--</div>
+            </div>
+            <div class="waveform-container" style="max-height:190px">
+                <canvas id="waveformResult" class="waveform-canvas"></canvas>
+            </div>
+            <div class="audio-controls">
+                <button class="control-btn play-btn" id="playResult" disabled title="Play">▶️</button>
+                <button class="control-btn pause-btn" id="pauseResult" disabled title="Pausar">⏸️</button>
+                <button class="control-btn stop-btn" id="stopResult" disabled title="Parar">⏹️</button>
+                <button class="control-btn record-btn" id="recordResult" disabled title="Exportar">⏺️</button>
+                <button class="control-btn normalize-btn" id="normalizeResult" disabled title="Normalizar">📊</button>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div id="status">Carregue dois arquivos de áudio para começar</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// GLOBALS
+// ============================================================
+let audioContext = null;
+let audioData1 = null;
+let audioData2 = null;
+let resultAudio = null;
+const sampleRate = 44100;
+let overlapAlignment = 'start';
+
+const players = {
+    '1':      { source: null, pauseOffset: 0, startTime: 0, isPlaying: false },
+    '2':      { source: null, pauseOffset: 0, startTime: 0, isPlaying: false },
+    'Result': { source: null, pauseOffset: 0, startTime: 0, isPlaying: false }
+};
+
+function getAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioContext;
+}
+
+// ============================================================
+// dB ↔ linear
+// ============================================================
+function dbToLinear(db) {
+    return Math.pow(10, db / 20);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('audio1').addEventListener('change', e => loadAudio(e, '1'));
+    document.getElementById('audio2').addEventListener('change', e => loadAudio(e, '2'));
+    document.getElementById('transformBtn').addEventListener('click', processarInterpolacao);
+
+    const selectType = document.getElementById('interpolationType');
+    if (selectType) selectType.addEventListener('change', updateInterfaceConfig);
+
+    updateInterfaceConfig();
+    setupPanelControls('1');
+    setupPanelControls('2');
+    setupPanelControls('Result');
+    setupSliderLabels();
+    setupGainSliders();
+    setupAlignButtons();
+    setupResultButtons();
+});
+
+// ============================================================
+// INTERFACE
+// ============================================================
+function updateInterfaceConfig() {
+    const select = document.getElementById('interpolationType');
+    if (!select) return;
+    const tipo = select.value;
+
+    const labelTopo = document.getElementById('Interpolação-label');
+    if (labelTopo) labelTopo.innerText = select.options[select.selectedIndex].text;
+
+    const grainCont   = document.getElementById('grainDurationContainer');
+    const crossCont   = document.getElementById('crossfadeContainer');
+    const durRandCont = document.getElementById('durationRandomnessContainer');
+    const randCont    = document.getElementById('randomnessSliderContainer');
+    const alignCont   = document.getElementById('alignContainer');
+
+    // hide all mode-specific
+    [grainCont, crossCont, durRandCont, randCont, alignCont].forEach(el => { if(el) el.classList.add('hidden'); });
+
+    if (tipo === 'grain') {
+        grainCont.classList.remove('hidden');
+        crossCont.classList.remove('hidden');
+        durRandCont.classList.remove('hidden');
+    } else if (tipo === 'random') {
+        randCont.classList.remove('hidden');
+    } else if (tipo === 'overlap') {
+        alignCont.classList.remove('hidden');
+    }
+    // 'equal' → nothing extra
+}
+
+function setupSliderLabels() {
+    [
+        ['progress',          'progressValue',          '%'],
+        ['randomness',        'randomnessValue',        '%'],
+        ['crossfade',         'crossfadeValue',         '%'],
+        ['durationRandomness','durationRandomnessValue', '%'],
+    ].forEach(([id, valId, unit]) => {
+        const s = document.getElementById(id + 'Slider');
+        const v = document.getElementById(valId);
+        if (s && v) s.addEventListener('input', () => { v.innerText = s.value; });
+    });
+}
+
+function setupGainSliders() {
+    ['1','2'].forEach(n => {
+        const slider = document.getElementById(`gain${n}Slider`);
+        const label  = document.getElementById(`gain${n}Value`);
+        if (slider && label) {
+            slider.addEventListener('input', () => {
+                label.innerText = parseFloat(slider.value).toFixed(1) + ' dB';
+            });
+        }
+    });
+}
+
+function setupAlignButtons() {
+    document.querySelectorAll('.align-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            overlapAlignment = btn.dataset.align;
+        });
+    });
+}
+
+// ============================================================
+// LOAD AUDIO
+// ============================================================
+async function loadAudio(event, panel) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const nameDiv = document.getElementById(`audio${panel}-name`);
+    if (nameDiv) nameDiv.innerText = file.name;
+
+    try {
+        const ctx = getAudioContext();
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        const data = audioBuffer.getChannelData(0);
+
+        if (panel === '1') audioData1 = new Float32Array(data);
+        else               audioData2 = new Float32Array(data);
+
+        document.getElementById(`duration${panel}`).innerText = audioBuffer.duration.toFixed(2) + 's';
+        drawWaveform(data, `waveform${panel}`);
+
+        // enable playback buttons
+        ['play','pause','stop'].forEach(a => {
+            const el = document.getElementById(`${a}${panel}`);
+            if (el) el.disabled = false;
+        });
+
+        if (audioData1 && audioData2) {
+            document.getElementById('transformBtn').disabled = false;
+        }
+        updateStatus(`Áudio ${panel} carregado.`);
+    } catch (e) {
+        updateStatus('Erro ao carregar áudio: ' + e.message);
+    }
+}
+
+// ============================================================
+// PANEL CONTROLS (play / pause / stop)
+// ============================================================
+function setupPanelControls(id) {
+    const playBtn  = document.getElementById(`play${id}`);
+    const pauseBtn = document.getElementById(`pause${id}`);
+    const stopBtn  = document.getElementById(`stop${id}`);
+
+    if (playBtn) {
+        playBtn.onclick = async () => {
+            const ctx = getAudioContext();
+            if (ctx.state === 'suspended') await ctx.resume();
+
+            // If already playing, restart from pauseOffset
+            stopAudio(id);
+
+            let rawData;
+            if (id === '1')      rawData = audioData1;
+            else if (id === '2') rawData = audioData2;
+            else                 rawData = resultAudio;
+            if (!rawData) return;
+
+            // Apply gain for panels 1 and 2
+            let data = rawData;
+            if (id === '1' || id === '2') {
+                const db = parseFloat(document.getElementById(`gain${id}Slider`).value);
+                const gain = dbToLinear(db);
+                if (Math.abs(db) > 0.01) {
+                    data = new Float32Array(rawData.length);
+                    for (let i = 0; i < rawData.length; i++) data[i] = rawData[i] * gain;
+                }
+            }
+
+            const buffer = ctx.createBuffer(1, data.length, sampleRate);
+            buffer.copyToChannel(data, 0);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+
+            const offset = players[id].pauseOffset || 0;
+            source.start(0, offset);
+            players[id].source    = source;
+            players[id].startTime = ctx.currentTime - offset;
+            players[id].isPlaying = true;
+
+            source.onended = () => {
+                players[id].isPlaying  = false;
+                players[id].pauseOffset = 0;
+            };
+        };
+    }
+
+    if (pauseBtn) {
+        pauseBtn.onclick = () => {
+            const ctx = getAudioContext();
+            if (players[id].isPlaying) {
+                players[id].pauseOffset = ctx.currentTime - players[id].startTime;
+                stopAudioSource(id);
+            } else if (players[id].pauseOffset > 0) {
+                // resume (just trigger play again)
+                document.getElementById(`play${id}`).onclick();
+            }
+        };
+    }
+
+    if (stopBtn) stopBtn.onclick = () => stopAudio(id);
+}
+
+function stopAudioSource(id) {
+    if (players[id] && players[id].source) {
+        try { players[id].source.stop(); } catch(e) {}
+        players[id].source    = null;
+        players[id].isPlaying = false;
+    }
+}
+
+function stopAudio(id) {
+    stopAudioSource(id);
+    players[id].pauseOffset = 0;
+}
+
+// ============================================================
+// RESULT BUTTONS (normalize, export)
+// ============================================================
+function setupResultButtons() {
+    const normBtn = document.getElementById('normalizeResult');
+    if (normBtn) {
+        normBtn.onclick = () => {
+            if (!resultAudio) return;
+            let peak = 0;
+            for (let i = 0; i < resultAudio.length; i++) {
+                const abs = Math.abs(resultAudio[i]);
+                if (abs > peak) peak = abs;
+            }
+            if (peak < 0.0001) return;
+            const factor = 0.98 / peak;
+            for (let i = 0; i < resultAudio.length; i++) resultAudio[i] *= factor;
+            drawWaveform(resultAudio, 'waveformResult');
+            updateStatus('Normalizado.');
+        };
+    }
+
+    const recBtn = document.getElementById('recordResult');
+    if (recBtn) {
+        recBtn.onclick = () => {
+            if (!resultAudio) return;
+            exportWav(resultAudio, buildFileName());
+        };
+    }
+}
+
+// ============================================================
+// PROCESSING
+// ============================================================
+function processarInterpolacao() {
+    if (!audioData1 || !audioData2) return;
+
+    const tipo    = document.getElementById('interpolationType').value;
+    const mixFator = parseFloat(document.getElementById('progressSlider').value) / 100;
+
+    // Apply gain to source arrays
+    const db1 = parseFloat(document.getElementById('gain1Slider').value);
+    const db2 = parseFloat(document.getElementById('gain2Slider').value);
+    const g1   = dbToLinear(db1);
+    const g2   = dbToLinear(db2);
+
+    const src1 = applyGain(audioData1, g1);
+    const src2 = applyGain(audioData2, g2);
+
+    updateStatus('Processando...', true);
+
+    setTimeout(() => {
+        const t0 = performance.now();
+
+        if (tipo === 'grain') {
+            resultAudio = interpolarGraos(src1, src2, mixFator);
+        } else if (tipo === 'overlap') {
+            resultAudio = interpolarSobreposicao(src1, src2, mixFator, overlapAlignment);
+        } else {
+            // equal or random
+            const randomness   = parseFloat(document.getElementById('randomnessSlider').value) / 100;
+            const tamanhoFinal = Math.max(src1.length, src2.length);
+            const jitterVal    = randomness;
+
+            const a1 = redimensionar(src1, tamanhoFinal, jitterVal);
+            const a2 = redimensionar(src2, tamanhoFinal, jitterVal);
+
+            resultAudio = new Float32Array(tamanhoFinal);
+            for (let i = 0; i < tamanhoFinal; i++) {
+                resultAudio[i] = a1[i] * (1 - mixFator) + a2[i] * mixFator;
+            }
+        }
+
+        drawWaveform(resultAudio, 'waveformResult');
+        document.getElementById('durationResult').innerText = (resultAudio.length / sampleRate).toFixed(2) + 's';
+
+        ['playResult','stopResult','pauseResult','recordResult','normalizeResult'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = false;
+        });
+
+        updateStatus(`Pronto (${(performance.now() - t0).toFixed(0)}ms)`);
+    }, 50);
+}
+
+function applyGain(data, gain) {
+    if (Math.abs(gain - 1.0) < 0.001) return data;
+    const out = new Float32Array(data.length);
+    for (let i = 0; i < data.length; i++) out[i] = data[i] * gain;
+    return out;
+}
+
+// ============================================================
+// ALGORITHMS
+// ============================================================
+function redimensionar(data, novoTamanho, jitter) {
+    const output   = new Float32Array(novoTamanho);
+    const proporcao = (data.length - 1) / (novoTamanho - 1);
+    for (let i = 0; i < novoTamanho; i++) {
+        let idx = i * proporcao;
+        if (jitter > 0) {
+            idx += (Math.random() - 0.5) * (jitter * 30);
+            idx = Math.max(0, Math.min(data.length - 1, idx));
+        }
+        const low  = Math.floor(idx);
+        const high = Math.min(low + 1, data.length - 1);
+        const w    = idx - low;
+        output[i]  = (1 - w) * data[low] + w * data[high];
+    }
+    return output;
+}
+
+// ------------------------------------------------------------
+// GRAIN INTERPOLATION — overlap-add with sin² envelope
+// ------------------------------------------------------------
+function interpolarGraos(data1, data2, fator) {
+    const grainMs  = parseFloat(document.getElementById('grainDurationInput').value) || 100;
+    const cfPct    = parseFloat(document.getElementById('crossfadeSlider').value) / 100;
+    const durRandPct = parseFloat(document.getElementById('durationRandomnessSlider').value) / 100;
+
+    const grainSamples = Math.floor((grainMs / 1000) * sampleRate);
+    // Crossfade em amostras (cada lado)
+    const fadeSamples  = Math.floor(grainSamples * cfPct * 0.5);
+
+    // Hop: avança pelo núcleo do grão (sem as regiões de fade)
+    // Com overlap-add correto: hop = grainSamples - fadeSamples
+    const hopBase = Math.max(1, grainSamples - fadeSamples);
+
+    const totalSamples = Math.max(data1.length, data2.length);
+    const output       = new Float32Array(totalSamples);
+
+    let pos = 0;
+    while (pos < totalSamples) {
+        // Duração aleatória do grão
+        const randMult = durRandPct > 0
+            ? 1 + (Math.random() * 4) * durRandPct
+            : 1;
+        const thisGrain = Math.max(8, Math.floor(grainSamples * randMult));
+        const thisFade  = Math.min(Math.floor(thisGrain * cfPct * 0.5), Math.floor(thisGrain / 2) - 1);
+
+        // Escolhe fonte
+        const source = Math.random() < fator ? data2 : data1;
+        // Posição de leitura na fonte (aleatória)
+        const srcStart = Math.floor(Math.random() * Math.max(1, source.length - thisGrain));
+
+        // Comprimento total do grão incluindo fades (pode ultrapassar fronteiras do hop)
+        const totalGrain = thisGrain + 2 * thisFade;
+
+        for (let j = 0; j < totalGrain; j++) {
+            const outIdx = pos - thisFade + j;
+            if (outIdx < 0 || outIdx >= totalSamples) continue;
+
+            const srcIdx = (srcStart + j) % source.length;
+            let sample   = source[srcIdx];
+
+            // Envelope sin²
+            let env = 1.0;
+            if (thisFade > 0) {
+                if (j < thisFade) {
+                    const t = j / thisFade;
+                    env = Math.sin(t * Math.PI * 0.5);
+                    env = env * env; // sin²
+                } else if (j >= totalGrain - thisFade) {
+                    const t = (totalGrain - j) / thisFade;
+                    env = Math.sin(t * Math.PI * 0.5);
+                    env = env * env;
+                }
+            }
+
+            output[outIdx] += sample * env;
+        }
+
+        // Hop com leve aleatoriedade opcional
+        const hop = Math.max(1, Math.floor(hopBase * randMult));
+        pos += hop;
+    }
+
+    // Normalização suave para evitar clipping por sobreposição
+    if (fadeSamples > 0 && cfPct > 0) {
+        const overlapFactor = Math.max(1, 1 + cfPct);
+        for (let i = 0; i < output.length; i++) output[i] /= overlapFactor;
+    }
+
+    return output;
+}
+
+// ------------------------------------------------------------
+// OVERLAP INTERPOLATION (sem redimensionamento)
+// ------------------------------------------------------------
+function interpolarSobreposicao(data1, data2, fator, alignment) {
+    const len1   = data1.length;
+    const len2   = data2.length;
+    const lenMax = Math.max(len1, len2);
+    const lenMin = Math.min(len1, len2);
+
+    const shorter = len1 <= len2 ? data1 : data2;
+    const longer  = len1 >  len2 ? data1 : data2;
+
+    // Fator: 0 = só áudio 1, 1 = só áudio 2
+    // No overlap, aplica-se nos trechos comuns
+    const mixA = len1 <= len2 ? (1 - fator) : fator;
+    const mixB = len1 <= len2 ? fator        : (1 - fator);
+
+    // Offset do áudio mais curto
+    let offset = 0;
+    if (alignment === 'center') {
+        offset = Math.floor((lenMax - lenMin) / 2);
+    } else if (alignment === 'end') {
+        offset = lenMax - lenMin;
+    }
+
+    const output = new Float32Array(lenMax);
+
+    for (let i = 0; i < lenMax; i++) {
+        const shortIdx = i - offset;
+        const inShort  = shortIdx >= 0 && shortIdx < lenMin;
+
+        if (inShort) {
+            // Região de sobreposição: interpola
+            output[i] = longer[i] * mixB + shorter[shortIdx] * mixA;
+        } else {
+            // Região exclusiva do áudio mais longo: sinal puro
+            output[i] = longer[i];
+        }
+    }
+
+    return output;
+}
+
+// ============================================================
+// WAVEFORM
+// ============================================================
+function drawWaveform(data, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx  = canvas.getContext('2d');
+    const W    = canvas.offsetWidth  || canvas.width  || 600;
+    const H    = canvas.offsetHeight || canvas.height || 120;
+    canvas.width  = W;
+    canvas.height = H;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    ctx.beginPath();
+    ctx.strokeStyle = canvasId.includes('Result') ? '#00ff88' : '#00aaff';
+    ctx.lineWidth = 1;
+
+    const step = Math.ceil(data.length / W);
+    const amp  = H / 2;
+
+    for (let i = 0; i < W; i++) {
+        let min = 1.0, max = -1.0;
+        for (let j = 0; j < step; j++) {
+            const d = data[i * step + j];
+            if (d !== undefined) { if (d < min) min = d; if (d > max) max = d; }
+        }
+        ctx.moveTo(i, (1 + min) * amp);
+        ctx.lineTo(i, (1 + max) * amp);
+    }
+    ctx.stroke();
+}
+
+// ============================================================
+// STATUS
+// ============================================================
+function updateStatus(msg) {
+    const el = document.getElementById('status');
+    if (el) el.innerText = msg;
+}
+
+// ============================================================
+// EXPORT WAV
+// ============================================================
+function buildFileName() {
+    const tipo = document.getElementById('interpolationType').value;
+    const fator = document.getElementById('progressSlider').value;
+
+    if (tipo === 'grain') {
+        const grainDur  = document.getElementById('grainDurationInput').value;
+        const cf        = document.getElementById('crossfadeSlider').value;
+        const durRand   = document.getElementById('durationRandomnessSlider').value;
+        return `interpolado_graos_dur${grainDur}ms_cf${cf}_rand${durRand}_mix${fator}.wav`;
+    } else if (tipo === 'random') {
+        const rand = document.getElementById('randomnessSlider').value;
+        return `interpolado_aleatorio_rand${rand}_mix${fator}.wav`;
+    } else if (tipo === 'overlap') {
+        return `interpolado_sobreposicao_${overlapAlignment}_mix${fator}.wav`;
+    } else {
+        return `interpolado_regular_mix${fator}.wav`;
+    }
+}
+
+function exportWav(samples, fileName) {
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+    const blockAlign = numChannels * bitsPerSample / 8;
+    const dataSize = samples.length * blockAlign;
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    function writeStr(off, str) { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); }
+
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeStr(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    let off = 44;
+    for (let i = 0; i < samples.length; i++, off += 2) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+
+    const blob = new Blob([buffer], { type: 'audio/wav' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
 </body>
 </html>
