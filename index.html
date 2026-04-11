@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interpolador de Áudios v1.4</title>
+    <title>Interpolador de Áudios v1.5</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
@@ -307,16 +307,19 @@
         }
         .env-action-btn {
             flex: 1;
-            padding: 5px 8px;
+            padding: 5px 3px;
             background: rgba(255,255,255,0.07);
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 5px;
             color: #aaa;
-            font-size: 0.68rem;
+            font-size: 0.6rem;
             cursor: pointer;
             transition: all 0.2s;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .env-action-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
@@ -424,6 +427,23 @@
         .normalize-btn { background: linear-gradient(45deg, #2a2a3e 0%, #3a3a52 100%); color: rgba(255,255,255,0.85); }
         .normalize-btn:hover:not(:disabled) { transform: scale(1.1); }
 
+        .result-filename {
+            font-size: 0.7rem;
+            color: #4ecdc4;
+            background: rgba(78,205,196,0.08);
+            border: 1px solid rgba(78,205,196,0.2);
+            border-radius: 6px;
+            padding: 3px 8px;
+            margin-top: 4px;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: monospace;
+            text-align: center;
+            min-height: 22px;
+        }
+
         .status-bar {
             background: rgba(255,255,255,0.05); backdrop-filter: blur(10px);
             border-radius: 8px; padding: 5px 14px;
@@ -446,7 +466,7 @@
     <div class="sidebar">
         <div class="logo">
             <h1>Interpolador de Áudio</h1>
-            <div class="version">v1.4</div>
+            <div class="version">v1.5</div>
         </div>
 
         <!-- Sidebar Tab Buttons -->
@@ -561,12 +581,14 @@
                 </div>
 
                 <div class="env-actions">
-                    <button class="env-action-btn" id="envResetBtn">↺ Reset</button>
+                    <button class="env-action-btn" id="envResetBtn">↺ Rst</button>
                     <button class="env-action-btn" id="envFlatBtn">— Flat</button>
-                    <button class="env-action-btn" id="envRampUpBtn">↗ Crescente</button>
-                    <button class="env-action-btn" id="envRampDownBtn">↘ Decrescente</button>
+                    <button class="env-action-btn" id="envRampUpBtn">↗ Cresc.</button>
+                    <button class="env-action-btn" id="envRampDownBtn">↘ Decr.</button>
                 </div>
             </div>
+
+            <button class="btn btn-primary" id="transformBtnEnv" disabled style="margin-top:12px;">⚡ Aplicar Transformação</button>
         </div>
     </div>
 
@@ -632,6 +654,7 @@
                 <div class="audio-title">⚡ Interpolação</div>
                 <div class="audio-info" id="durationResult">--:--</div>
             </div>
+            <div class="result-filename" id="resultFileName">—</div>
             <div class="waveform-container" style="max-height:180px">
                 <canvas id="waveformResult" class="waveform-canvas"></canvas>
             </div>
@@ -789,16 +812,23 @@ function syncEnvEditorUI() {
     envCanvas.classList.toggle('disabled', false); // always editable
 }
 
+const ENV_CANVAS_PAD = 8; // vertical padding so extreme points are reachable
+
 function envCanvasToParam(cx, cy) {
     const W = envCanvas.offsetWidth || envCanvas.width;
     const H = envCanvas.offsetHeight || envCanvas.height;
-    return { x: Math.max(0, Math.min(1, cx / W)), y: Math.max(0, Math.min(1, 1 - cy / H)) };
+    const usableH = H - ENV_CANVAS_PAD * 2;
+    return {
+        x: Math.max(0, Math.min(1, cx / W)),
+        y: Math.max(0, Math.min(1, 1 - (cy - ENV_CANVAS_PAD) / usableH))
+    };
 }
 
 function paramToCanvas(px, py) {
     const W = envCanvas.offsetWidth || envCanvas.width;
     const H = envCanvas.offsetHeight || envCanvas.height;
-    return { cx: px * W, cy: (1 - py) * H };
+    const usableH = H - ENV_CANVAS_PAD * 2;
+    return { cx: px * W, cy: ENV_CANVAS_PAD + (1 - py) * usableH };
 }
 
 function getCanvasPos(e) {
@@ -923,7 +953,7 @@ function updateSliderFromEnvelope(paramKey) {
     slider.value = v;
     if (valEl) {
         if (cfg.unit === ' dB') valEl.textContent = v.toFixed(1) + ' dB';
-        else valEl.textContent = Math.round(v) + cfg.unit;
+        else valEl.textContent = Math.round(v); // unit symbol already in HTML span sibling
     }
 }
 
@@ -980,14 +1010,14 @@ function drawEnvCanvas() {
 
     // Envelope curve (fill)
     envCtx.beginPath();
-    envCtx.moveTo(0, H);
+    envCtx.moveTo(0, H - ENV_CANVAS_PAD);
     const p0 = paramToCanvas(pts[0].x, pts[0].y);
     envCtx.lineTo(p0.cx, p0.cy);
     for (let i = 1; i < pts.length; i++) {
         const p = paramToCanvas(pts[i].x, pts[i].y);
         envCtx.lineTo(p.cx, p.cy);
     }
-    envCtx.lineTo(W, H);
+    envCtx.lineTo(W, H - ENV_CANVAS_PAD);
     envCtx.closePath();
     const grad = envCtx.createLinearGradient(0, 0, 0, H);
     if (env.active) {
@@ -1046,12 +1076,36 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('audio1').addEventListener('change', e => loadAudio(e, '1'));
     document.getElementById('audio2').addEventListener('change', e => loadAudio(e, '2'));
     document.getElementById('transformBtn').addEventListener('click', processarInterpolacao);
+    document.getElementById('transformBtnEnv').addEventListener('click', processarInterpolacao);
+
+    // Restore last used filenames as hints
+    try {
+        ['1','2'].forEach(n => {
+            const last = localStorage.getItem(`lastAudioName${n}`);
+            if (last) {
+                const nameDiv = document.getElementById(`audio${n}-name`);
+                if (nameDiv && nameDiv.innerText === 'Nenhum arquivo') {
+                    nameDiv.innerText = '← ' + last;
+                    nameDiv.title = 'Último arquivo usado: ' + last;
+                }
+            }
+        });
+    } catch(e) {}
 
     const selectType = document.getElementById('interpolationType');
     if (selectType) selectType.addEventListener('change', () => {
         updateInterfaceConfig();
         syncEnvTabsVisibility();
+        updateResultFileName();
     });
+
+    // Update filename preview on any relevant slider change
+    ['progressSlider','randomnessSlider','crossfadeSlider','durationRandomnessSlider'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateResultFileName);
+    });
+    const grainInput = document.getElementById('grainDurationInput');
+    if (grainInput) grainInput.addEventListener('input', updateResultFileName);
 
     updateInterfaceConfig();
     syncEnvTabsVisibility();
@@ -1064,6 +1118,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupResultButtons();
     setupSidebarTabs();
     initEnvelopeEditor();
+    updateResultFileName();
 });
 
 // ============================================================
@@ -1149,7 +1204,18 @@ function setupAlignButtons() {
             document.querySelectorAll('.align-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             overlapAlignment = btn.dataset.align;
+            updateResultFileName();
         });
+    });
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function setTransformEnabled(enabled) {
+    ['transformBtn', 'transformBtnEnv'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
     });
 }
 
@@ -1162,6 +1228,9 @@ async function loadAudio(event, panel) {
 
     const nameDiv = document.getElementById(`audio${panel}-name`);
     if (nameDiv) nameDiv.innerText = file.name;
+
+    // Remember last filename in localStorage
+    try { localStorage.setItem(`lastAudioName${panel}`, file.name); } catch(e) {}
 
     try {
         const ctx = getAudioContext();
@@ -1181,8 +1250,9 @@ async function loadAudio(event, panel) {
         });
 
         if (audioData1 && audioData2) {
-            document.getElementById('transformBtn').disabled = false;
+            setTransformEnabled(true);
         }
+        updateResultFileName();
         updateStatus(`Áudio ${panel} carregado.`);
     } catch (e) {
         updateStatus('Erro ao carregar áudio: ' + e.message);
@@ -1542,19 +1612,32 @@ function buildFileName() {
     const tipo  = document.getElementById('interpolationType').value;
     const fator = document.getElementById('progressSlider').value;
 
+    // Compressed audio names (strip extension, max 12 chars)
+    const raw1 = (document.getElementById('audio1-name').innerText || 'A1').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9À-ú_\-]/g, '').slice(0, 12) || 'A1';
+    const raw2 = (document.getElementById('audio2-name').innerText || 'A2').replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9À-ú_\-]/g, '').slice(0, 12) || 'A2';
+
+    const tipoMap = { random: 'DA', grain: 'MG', overlap: 'SP' };
+    const tipoAbr = tipoMap[tipo] || tipo;
+
     if (tipo === 'grain') {
         const grainDur = document.getElementById('grainDurationInput').value;
         const cf       = document.getElementById('crossfadeSlider').value;
         const durRand  = document.getElementById('durationRandomnessSlider').value;
-        return `interpolado_graos_dur${grainDur}ms_cf${cf}_rand${durRand}_mix${fator}.wav`;
+        return `${raw1}-${raw2}_${tipoAbr}_DG${grainDur}_CF${cf}_AD${durRand}_FI${fator}.wav`;
     } else if (tipo === 'random') {
         const rand = document.getElementById('randomnessSlider').value;
-        return `interpolado_aleatorio_rand${rand}_mix${fator}.wav`;
+        return `${raw1}-${raw2}_${tipoAbr}_FA${rand}_FI${fator}.wav`;
     } else if (tipo === 'overlap') {
-        return `interpolado_sobreposicao_${overlapAlignment}_mix${fator}.wav`;
+        const alignAbr = { start: 'ini', center: 'ctr', end: 'fim' }[overlapAlignment] || overlapAlignment;
+        return `${raw1}-${raw2}_${tipoAbr}_${alignAbr}_FI${fator}.wav`;
     } else {
-        return `interpolado_regular_mix${fator}.wav`;
+        return `${raw1}-${raw2}_${tipoAbr}_FI${fator}.wav`;
     }
+}
+
+function updateResultFileName() {
+    const el = document.getElementById('resultFileName');
+    if (el) el.textContent = buildFileName();
 }
 
 function exportWav(samples, fileName) {
